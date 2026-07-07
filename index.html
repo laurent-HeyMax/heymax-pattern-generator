@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HeyMax — Pattern Generator</title>
+<style>
+:root{
+  --bg:#0A0A0A; --panel:#141414; --panel-2:#1c1c1c;
+  --text:#F4F4F4; --text-secondary:#9a9a9a; --text-muted:#666;
+  --border:#2a2a2a; --border-strong:#3a3a3a; --radius:8px;
+  --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font-sans);min-height:100vh}
+.app{max-width:1080px;margin:0 auto;padding:32px 24px}
+header{margin-bottom:24px}
+header h1{font-size:20px;font-weight:500;letter-spacing:-.01em}
+header p{font-size:13px;color:var(--text-secondary);margin-top:4px}
+.wrap{display:flex;gap:24px;align-items:flex-start}
+.stage{flex:1;min-width:0;display:flex;flex-direction:column;gap:12px}
+.canvas-shell{position:relative;width:100%;aspect-ratio:1/1;border-radius:14px;overflow:hidden;border:0.5px solid var(--border)}
+#patternSvg{width:100%;height:100%;display:block}
+.stage-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.tag{font-size:12px;color:var(--text-muted);letter-spacing:.04em}
+.tag b{color:var(--text-secondary);font-weight:500}
+.actions{display:flex;gap:8px}
+button.export{border:0.5px solid var(--border-strong);background:var(--panel);color:var(--text);border-radius:var(--radius);padding:8px 14px;font-size:13px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:background .15s}
+button.export:hover{background:var(--panel-2)}
+button.export:active{transform:scale(.98)}
+.controls{width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:13px;background:var(--panel);border:0.5px solid var(--border);border-radius:12px;padding:18px}
+.ctrl label{display:block;font-size:13px;color:var(--text-secondary);margin-bottom:5px}
+.row{display:flex;align-items:center;gap:9px}
+.row input[type=range]{flex:1;accent-color:#F4F4F4}
+.row .val{font-size:12px;font-weight:500;min-width:38px;text-align:right;color:var(--text)}
+select,input[type=color]{width:100%;border:0.5px solid var(--border-strong);border-radius:var(--radius);padding:7px 9px;font-size:13px;background:var(--panel-2);color:var(--text)}
+input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
+.seg{font-size:11px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;padding-top:10px;margin-top:2px;border-top:0.5px solid var(--border)}
+.swatches{display:flex;gap:6px;margin-top:2px}
+.sw{flex:1;height:26px;border-radius:6px;border:0.5px solid var(--border);cursor:pointer}
+.perlin-only{display:none}
+@media(max-width:720px){.wrap{flex-direction:column}.controls{width:100%}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Pattern generator</h1>
+    <p>Fibonacci, Perlin flow field, grid and concentric layouts built from the mark. Non-overlapping by construction.</p>
+  </header>
+
+  <div class="wrap">
+    <div class="stage">
+      <div class="canvas-shell">
+        <svg id="patternSvg" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <symbol id="mono" viewBox="0 0 246 378">
+              <path d="M123 0C190.931 4.39387e-05 246 55.0699 246 123.001V254.2C246 322.131 190.931 377.201 123 377.201C55.0689 377.201 0 322.131 0 254.2V123.001C0 55.0699 55.0689 0 123 0ZM123 13.667C62.6168 13.667 13.667 62.6178 13.667 123.001V254.2C13.667 314.583 62.6168 363.534 123 363.534C183.383 363.534 232.333 314.583 232.333 254.2V123.001C232.333 62.6178 183.383 13.667 123 13.667ZM77.917 134.473L77.9756 136.655C79.1503 159.115 98.3309 177.346 122.307 177.346C146.281 177.344 165.458 159.114 166.633 136.655L166.691 134.473V106.6H192.674V267.381H166.691V187.687C154.55 197.313 139.082 203.072 122.307 203.072C105.531 203.072 90.0589 197.313 77.917 187.687V267.381H51.9336V106.6H77.917V134.473Z"/>
+            </symbol>
+          </defs>
+          <rect id="bgRect" width="600" height="600" fill="#0A0A0A"/>
+          <g id="elements"></g>
+        </svg>
+      </div>
+      <div class="stage-foot">
+        <span class="tag"><b id="actualCount">0</b> marks · <b id="patName">grid</b> · no overlap</span>
+        <div class="actions">
+          <button class="export" id="exportBtn">Export SVG</button>
+          <button class="export" id="exportPngBtn">Export PNG</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="ctrl">
+        <label>Pattern</label>
+        <select id="patType">
+          <option value="grid" selected>Grid</option>
+          <option value="fibonacci">Fibonacci spiral</option>
+          <option value="perlin">Perlin flow field</option>
+          <option value="circles">Concentric circles</option>
+        </select>
+      </div>
+
+      <div class="seg">Composition</div>
+      <div class="ctrl">
+        <label>Count <span style="color:var(--text-muted)">(target)</span></label>
+        <div class="row"><input type="range" id="count" min="9" max="400" value="121" step="1"><span class="val" id="countOut">121</span></div>
+      </div>
+      <div class="ctrl">
+        <label>Element size</label>
+        <div class="row"><input type="range" id="elemSize" min="20" max="100" value="80" step="1"><span class="val" id="elemSizeOut">80%</span></div>
+      </div>
+      <div class="ctrl">
+        <label>Spread</label>
+        <div class="row"><input type="range" id="spread" min="40" max="100" value="92" step="1"><span class="val" id="spreadOut">92%</span></div>
+      </div>
+      <div class="ctrl">
+        <label>Rotation</label>
+        <div class="row"><input type="range" id="rotation" min="0" max="360" value="0" step="1"><span class="val" id="rotationOut">0&deg;</span></div>
+      </div>
+      <div class="ctrl perlin-only">
+        <label>Flow turbulence</label>
+        <div class="row"><input type="range" id="noiseScale" min="1" max="20" value="6" step="1"><span class="val" id="noiseScaleOut">6</span></div>
+      </div>
+
+      <div class="seg">Colour</div>
+      <div class="swatches">
+        <div class="sw" data-bg="#0A0A0A" data-fg="#F4F4F4" style="background:#0A0A0A"></div>
+        <div class="sw" data-bg="#F4F4F4" data-fg="#111111" style="background:#F4F4F4"></div>
+        <div class="sw" data-bg="#16110E" data-fg="#D85A30" style="background:#16110E"></div>
+        <div class="sw" data-bg="#0C1420" data-fg="#378ADD" style="background:#0C1420"></div>
+      </div>
+      <div class="ctrl">
+        <label>Background</label>
+        <input type="color" id="bgColor" value="#0A0A0A">
+      </div>
+      <div class="ctrl">
+        <label>Element fill</label>
+        <input type="color" id="elemColor" value="#F4F4F4">
+      </div>
+      <div class="ctrl">
+        <label>Opacity</label>
+        <div class="row"><input type="range" id="opacity" min="20" max="100" value="100" step="1"><span class="val" id="opacityOut">100%</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const NS='http://www.w3.org/2000/svg';
+  const W=600,H=600,CX=W/2,CY=H/2,AR=246/378;
+  const elems=document.getElementById('elements');
+  const bgRect=document.getElementById('bgRect');
+  const MONO_PATH="M123 0C190.931 4.39387e-05 246 55.0699 246 123.001V254.2C246 322.131 190.931 377.201 123 377.201C55.0689 377.201 0 322.131 0 254.2V123.001C0 55.0699 55.0689 0 123 0ZM123 13.667C62.6168 13.667 13.667 62.6178 13.667 123.001V254.2C13.667 314.583 62.6168 363.534 123 363.534C183.383 363.534 232.333 314.583 232.333 254.2V123.001C232.333 62.6178 183.383 13.667 123 13.667ZM77.917 134.473L77.9756 136.655C79.1503 159.115 98.3309 177.346 122.307 177.346C146.281 177.344 165.458 159.114 166.633 136.655L166.691 134.473V106.6H192.674V267.381H166.691V187.687C154.55 197.313 139.082 203.072 122.307 203.072C105.531 203.072 90.0589 197.313 77.917 187.687V267.381H51.9336V106.6H77.917V134.473Z";
+
+  function fade(t){return t*t*t*(t*(t*6-15)+10)}
+  function lerp(a,b,t){return a+(b-a)*t}
+  const noise=(()=>{
+    const perm=new Uint8Array(512);
+    const src=[...Array(256).keys()].sort(()=>Math.random()-.5);
+    for(let i=0;i<256;i++) perm[i]=perm[i+256]=src[i];
+    function grad(h,x,y){const v=h&3,u=v<2?x:y,w=v<2?y:x;return((h&1)?-u:u)+((h&2)?-w:w);}
+    return (x,y)=>{
+      const X=Math.floor(x)&255,Y=Math.floor(y)&255;
+      x-=Math.floor(x);y-=Math.floor(y);
+      const u=fade(x),v=fade(y),a=perm[X]+Y,b=perm[X+1]+Y;
+      return lerp(lerp(grad(perm[a],x,y),grad(perm[b],x-1,y),u),
+                  lerp(grad(perm[a+1],x,y-1),grad(perm[b+1],x-1,y-1),u),v);
+    };
+  })();
+
+  const $=id=>document.getElementById(id);
+  function vals(){return{
+    type:$('patType').value, count:+$('count').value,
+    sizePct:+$('elemSize').value/100, spread:+$('spread').value/100,
+    rot:+$('rotation').value, bg:$('bgColor').value, color:$('elemColor').value,
+    op:+$('opacity').value/100, ns:+$('noiseScale').value/10
+  };}
+
+  let lastItems=[];
+
+  function addEl(x,y,size,rotDeg,color,op){
+    const h=size,w=size*AR;
+    const u=document.createElementNS(NS,'use');
+    u.setAttribute('href','#mono');
+    u.setAttribute('width',w.toFixed(2));
+    u.setAttribute('height',h.toFixed(2));
+    u.setAttribute('transform',`translate(${x.toFixed(2)} ${y.toFixed(2)}) rotate(${rotDeg.toFixed(1)}) translate(${(-w/2).toFixed(2)} ${(-h/2).toFixed(2)})`);
+    u.setAttribute('fill',color);
+    if(op<1) u.setAttribute('opacity',op.toFixed(2));
+    elems.appendChild(u);
+  }
+
+  function build(v){
+    const out=[];
+    if(v.type==='grid'){
+      const cols=Math.max(1,Math.round(Math.sqrt(v.count)));
+      const rows=Math.max(1,Math.round(v.count/cols));
+      const area=Math.min(W,H)*v.spread;
+      const ox=CX-area/2, oy=CY-area/2;
+      const cw=area/cols, ch=area/rows;
+      const size=Math.min(ch, cw/AR)*v.sizePct;
+      for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)
+        out.push({x:ox+cw*(c+.5),y:oy+ch*(r+.5),size,rot:0});
+    } else if(v.type==='fibonacci'){
+      const n=v.count, ga=2*Math.PI*(1-1/1.618033988749895);
+      const R=Math.min(W,H)*0.49*v.spread;
+      const pts=[];
+      for(let i=0;i<n;i++){const r=R*Math.sqrt((i+.5)/n),a=i*ga;
+        pts.push({x:CX+r*Math.cos(a),y:CY+r*Math.sin(a)});}
+      let minD=Infinity;
+      for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){
+        const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=dx*dx+dy*dy;
+        if(d<minD)minD=d;}
+      const size=Math.sqrt(minD)*0.96*v.sizePct;
+      pts.forEach(p=>out.push({x:p.x,y:p.y,size,rot:0}));
+    } else if(v.type==='circles'){
+      const R=Math.min(W,H)*0.47*v.spread;
+      const rings=Math.max(2,Math.round(Math.sqrt(v.count/2.8)));
+      const step=R/rings;
+      const sumR=step*rings*(rings+1)/2;
+      let minSize=step;
+      const rd=[];
+      for(let k=1;k<=rings;k++){
+        const radius=step*k;
+        let nk=Math.max(1,Math.round(v.count*radius/sumR));
+        const arc=2*Math.PI*radius/nk;
+        minSize=Math.min(minSize,arc);
+        rd.push({radius,nk});
+      }
+      const size=Math.min(minSize,step)*0.92*v.sizePct;
+      rd.forEach(({radius,nk})=>{
+        for(let i=0;i<nk;i++){const a=2*Math.PI*i/nk;
+          out.push({x:CX+radius*Math.cos(a),y:CY+radius*Math.sin(a),size,rot:0});}
+      });
+    } else {
+      const cols=Math.max(1,Math.round(Math.sqrt(v.count)));
+      const rows=cols;
+      const area=Math.min(W,H)*v.spread;
+      const ox=CX-area/2, oy=CY-area/2;
+      const cw=area/cols, ch=area/rows;
+      const size=Math.min(ch,cw/AR)*v.sizePct;
+      for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+        const x=ox+cw*(c+.5),y=oy+ch*(r+.5);
+        const ang=noise(x*v.ns/40,y*v.ns/40)*360;
+        out.push({x,y,size,rot:ang});
+      }
+    }
+    return out;
+  }
+
+  function draw(){
+    const v=vals();
+    bgRect.setAttribute('fill',v.bg);
+    document.querySelectorAll('.perlin-only').forEach(e=>e.style.display=v.type==='perlin'?'block':'none');
+    const items=build(v);
+    lastItems=items;
+    elems.innerHTML='';
+    items.forEach(it=>addEl(it.x,it.y,it.size,it.rot+v.rot,v.color,v.op));
+    $('actualCount').textContent=items.length;
+    $('patName').textContent=$('patType').selectedOptions[0].textContent.toLowerCase();
+  }
+
+  function bind(id,outId,fmt){
+    const el=$(id),out=outId?$(outId):null;
+    el.addEventListener('input',()=>{if(out)out.textContent=fmt?fmt(el.value):el.value;draw();});
+  }
+  bind('patType');
+  bind('count','countOut');
+  bind('elemSize','elemSizeOut',v=>v+'%');
+  bind('spread','spreadOut',v=>v+'%');
+  bind('rotation','rotationOut',v=>v+'°');
+  bind('noiseScale','noiseScaleOut');
+  bind('bgColor');bind('elemColor');
+  bind('opacity','opacityOut',v=>v+'%');
+
+  document.querySelectorAll('.sw').forEach(sw=>{
+    sw.addEventListener('click',()=>{
+      $('bgColor').value=sw.dataset.bg;
+      $('elemColor').value=sw.dataset.fg;
+      draw();
+    });
+  });
+
+  function buildStandaloneSVG(px){
+    const v=vals();
+    const s=px/W;
+    let body='';
+    lastItems.forEach(it=>{
+      const h=it.size,w=it.size*AR;
+      const tr=`translate(${(it.x*s).toFixed(2)} ${(it.y*s).toFixed(2)}) rotate(${(it.rot+v.rot).toFixed(1)}) scale(${s.toFixed(4)}) translate(${(-w/2).toFixed(2)} ${(-h/2).toFixed(2)}) scale(${(w/246).toFixed(5)} ${(h/378).toFixed(5)})`;
+      const op=v.op<1?` fill-opacity="${v.op.toFixed(2)}"`:'';
+      body+=`<path transform="${tr}" d="${MONO_PATH}" fill="${v.color}"${op}/>`;
+    });
+    return `<?xml version="1.0" encoding="UTF-8"?>\n`+
+      `<svg xmlns="${NS}" width="${px}" height="${px}" viewBox="0 0 ${px} ${px}">`+
+      `<rect width="${px}" height="${px}" fill="${v.bg}"/>${body}</svg>`;
+  }
+
+  function download(blob,name){
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=name;
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
+  }
+
+  $('exportBtn').addEventListener('click',()=>{
+    const str=buildStandaloneSVG(1080);
+    download(new Blob([str],{type:'image/svg+xml'}),'mono-pattern-'+$('patType').value+'.svg');
+  });
+
+  $('exportPngBtn').addEventListener('click',()=>{
+    const px=2160;
+    const str=buildStandaloneSVG(px);
+    const svgBlob=new Blob([str],{type:'image/svg+xml'});
+    const url=URL.createObjectURL(svgBlob);
+    const img=new Image();
+    img.onload=()=>{
+      const canvas=document.createElement('canvas');
+      canvas.width=px;canvas.height=px;
+      const ctx=canvas.getContext('2d');
+      ctx.drawImage(img,0,0,px,px);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(b=>download(b,'mono-pattern-'+$('patType').value+'.png'),'image/png');
+    };
+    img.src=url;
+  });
+
+  draw();
+})();
+</script>
+</body>
+</html>
