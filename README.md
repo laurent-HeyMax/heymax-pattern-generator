@@ -3,7 +3,7 @@
 A brand pattern generator built from the mark. Generates non-overlapping
 compositions using four layouts and exports print-ready vectors and raster.
 
-![Pattern generator](preview.png)
+**Live demo:** https://laurent-heymax.github.io/heymax-pattern-generator/
 
 ## Patterns
 
