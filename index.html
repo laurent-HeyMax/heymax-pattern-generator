@@ -79,6 +79,16 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
 
     <div class="controls">
       <div class="ctrl">
+        <label>Format</label>
+        <select id="ratio">
+          <option value="1:1" selected>1:1 — square</option>
+          <option value="16:9">16:9 — landscape</option>
+          <option value="9:16">9:16 — portrait / story</option>
+          <option value="5:4">5:4 — landscape</option>
+          <option value="4:5">4:5 — portrait / feed</option>
+        </select>
+      </div>
+      <div class="ctrl">
         <label>Pattern</label>
         <select id="patType">
           <option value="grid" selected>Grid</option>
@@ -161,7 +171,18 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
 <script>
 (function(){
   const NS='http://www.w3.org/2000/svg';
-  const W=600,H=600,CX=W/2,CY=H/2,AR=246/378;
+  const RATIOS={'1:1':[1,1],'16:9':[16,9],'9:16':[9,16],'5:4':[5,4],'4:5':[4,5]};
+  let W=600,H=600,CX=300,CY=300;
+  const AR=246/378;
+  function applyRatio(name){
+    const [rw,rh]=RATIOS[name];
+    if(rw>=rh){H=600;W=Math.round(600*rw/rh);}else{W=600;H=Math.round(600*rh/rw);}
+    CX=W/2;CY=H/2;
+    const svg=document.getElementById('patternSvg');
+    svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+    bgRect.setAttribute('width',W);bgRect.setAttribute('height',H);
+    document.querySelector('.canvas-shell').style.aspectRatio=`${rw}/${rh}`;
+  }
   const elems=document.getElementById('elements');
   const bgRect=document.getElementById('bgRect');
   const MONO_PATH="M123 0C190.931 4.39387e-05 246 55.0699 246 123.001V254.2C246 322.131 190.931 377.201 123 377.201C55.0689 377.201 0 322.131 0 254.2V123.001C0 55.0699 55.0689 0 123 0ZM123 13.667C62.6168 13.667 13.667 62.6178 13.667 123.001V254.2C13.667 314.583 62.6168 363.534 123 363.534C183.383 363.534 232.333 314.583 232.333 254.2V123.001C232.333 62.6178 183.383 13.667 123 13.667ZM77.917 134.473L77.9756 136.655C79.1503 159.115 98.3309 177.346 122.307 177.346C146.281 177.344 165.458 159.114 166.633 136.655L166.691 134.473V106.6H192.674V267.381H166.691V187.687C154.55 197.313 139.082 203.072 122.307 203.072C105.531 203.072 90.0589 197.313 77.917 187.687V267.381H51.9336V106.6H77.917V134.473Z";
@@ -202,11 +223,11 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
   let lastItems=[];
 
   function gridCells(v){
-    const cols=Math.max(1,Math.round(Math.sqrt(v.count)));
+    const areaW=W*v.spread, areaH=H*v.spread;
+    const cols=Math.max(1,Math.round(Math.sqrt(v.count*areaW/areaH)));
     const rows=Math.max(1,Math.round(v.count/cols));
-    const area=Math.min(W,H)*v.spread;
-    const ox=CX-area/2, oy=CY-area/2;
-    const cw=area/cols, ch=area/rows;
+    const ox=CX-areaW/2, oy=CY-areaH/2;
+    const cw=areaW/cols, ch=areaH/rows;
     const maxSize=Math.min(ch,cw/AR);
     return {cols,rows,ox,oy,cw,ch,maxSize};
   }
@@ -299,6 +320,7 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
 
   function draw(){
     const v=vals();
+    applyRatio($('ratio').value);
     bgRect.setAttribute('fill',v.bg);
     document.querySelectorAll('.cond').forEach(e=>{
       e.style.display=e.dataset.for.split(' ').includes(v.type)?'block':'none';});
@@ -325,7 +347,7 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
     const el=$(id),out=outId?$(outId):null;
     el.addEventListener('input',()=>{if(out)out.textContent=fmt?fmt(el.value):el.value;draw();});
   }
-  bind('patType');bind('count','countOut');
+  bind('ratio');bind('patType');bind('count','countOut');
   bind('elemSize','elemSizeOut',x=>x+'%');
   bind('spread','spreadOut',x=>x+'%');
   bind('rotation','rotationOut',x=>x+'°');
@@ -351,7 +373,8 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
 
   function buildStandaloneSVG(px){
     const v=vals();
-    const s=px/W;
+    const s=px/Math.min(W,H);
+    const outW=Math.round(W*s), outH=Math.round(H*s);
     let body='';
     lastItems.forEach(it=>{
       const h=it.size,w=it.size*AR;
@@ -360,8 +383,8 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
       body+=`<path transform="${tr}" d="${MONO_PATH}" fill="${markColor(it,v)}"${op}/>`;
     });
     return `<?xml version="1.0" encoding="UTF-8"?>\n`+
-      `<svg xmlns="${NS}" width="${px}" height="${px}" viewBox="0 0 ${px} ${px}">`+
-      `<rect width="${px}" height="${px}" fill="${v.bg}"/>${body}</svg>`;
+      `<svg xmlns="${NS}" width="${outW}" height="${outH}" viewBox="0 0 ${outW} ${outH}">`+
+      `<rect width="${outW}" height="${outH}" fill="${v.bg}"/>${body}</svg>`;
   }
 
   function download(blob,name){
@@ -374,20 +397,22 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
 
   $('exportBtn').addEventListener('click',()=>{
     download(new Blob([buildStandaloneSVG(1080)],{type:'image/svg+xml'}),
-      'heymax-pattern-'+$('patType').value+'.svg');
+      'heymax-pattern-'+$('patType').value+'-'+$('ratio').value.replace(':','x')+'.svg');
   });
 
   $('exportPngBtn').addEventListener('click',()=>{
     const px=2160;
+    const s=px/Math.min(W,H);
+    const outW=Math.round(W*s), outH=Math.round(H*s);
     const svgBlob=new Blob([buildStandaloneSVG(px)],{type:'image/svg+xml'});
     const url=URL.createObjectURL(svgBlob);
     const img=new Image();
     img.onload=()=>{
       const canvas=document.createElement('canvas');
-      canvas.width=px;canvas.height=px;
-      canvas.getContext('2d').drawImage(img,0,0,px,px);
+      canvas.width=outW;canvas.height=outH;
+      canvas.getContext('2d').drawImage(img,0,0,outW,outH);
       URL.revokeObjectURL(url);
-      canvas.toBlob(b=>download(b,'heymax-pattern-'+$('patType').value+'.png'),'image/png');
+      canvas.toBlob(b=>download(b,'heymax-pattern-'+$('patType').value+'-'+$('ratio').value.replace(':','x')+'.png'),'image/png');
     };
     img.src=url;
   });
