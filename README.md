@@ -11,14 +11,20 @@ compositions using four layouts and exports print-ready vectors and raster.
 - **Fibonacci spiral** — phyllotaxis layout, spacing derived from the true nearest-neighbour distance.
 - **Perlin flow field** — a grid where each mark rotates to follow a noise field.
 - **Concentric circles** — rings spaced so both arc and radial gaps stay clear.
+- **Halftone** — mark size fades with radial distance and noise, like a dot-screen.
+- **Waves** — size and rotation ripple across rows in sine phase.
+- **Orbit rings** — concentric rings with tangent-rotated marks and alternating phase.
+- **Diagonal cascade** — size and rotation graded along the diagonal.
 
 Every layout sizes its elements from its own spacing, so marks never overlap.
 
 ## Controls
 
 - Pattern, count, element size, spread, rotation
-- Flow turbulence (Perlin only)
-- Background / element colour, opacity, brand swatches
+- Turbulence / wave detail and effect strength (per pattern)
+- Colour modes: single, duotone, brand ramp
+- Brand pairing swatches, background / element colour, opacity
+- Shuffle seed for noise-driven layouts
 
 ## Export
 

@@ -6,47 +6,52 @@
 <title>HeyMax — Pattern Generator</title>
 <style>
 :root{
-  --bg:#0A0A0A; --panel:#141414; --panel-2:#1c1c1c;
-  --text:#F4F4F4; --text-secondary:#9a9a9a; --text-muted:#666;
-  --border:#2a2a2a; --border-strong:#3a3a3a; --radius:8px;
+  --bg:#F9F5FF; --panel:#FFFFFF; --panel-2:#F3EAFF;
+  --text:#21005E; --text-secondary:#514C56; --text-muted:#888;
+  --border:#E9E8EB; --border-strong:#D8C1FF; --radius:8px;
+  --accent:#4000B8;
   --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:var(--font-sans);min-height:100vh}
-.app{max-width:1080px;margin:0 auto;padding:32px 24px}
+.app{max-width:1120px;margin:0 auto;padding:32px 24px}
 header{margin-bottom:24px}
-header h1{font-size:20px;font-weight:500;letter-spacing:-.01em}
+header h1{font-size:20px;font-weight:600;letter-spacing:-.01em}
 header p{font-size:13px;color:var(--text-secondary);margin-top:4px}
 .wrap{display:flex;gap:24px;align-items:flex-start}
 .stage{flex:1;min-width:0;display:flex;flex-direction:column;gap:12px}
-.canvas-shell{position:relative;width:100%;aspect-ratio:1/1;border-radius:14px;overflow:hidden;border:0.5px solid var(--border)}
+.canvas-shell{position:relative;width:100%;aspect-ratio:1/1;border-radius:14px;overflow:hidden;border:1px solid var(--border)}
 #patternSvg{width:100%;height:100%;display:block}
 .stage-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 .tag{font-size:12px;color:var(--text-muted);letter-spacing:.04em}
 .tag b{color:var(--text-secondary);font-weight:500}
 .actions{display:flex;gap:8px}
-button.export{border:0.5px solid var(--border-strong);background:var(--panel);color:var(--text);border-radius:var(--radius);padding:8px 14px;font-size:13px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:7px;transition:background .15s}
-button.export:hover{background:var(--panel-2)}
-button.export:active{transform:scale(.98)}
-.controls{width:240px;flex-shrink:0;display:flex;flex-direction:column;gap:13px;background:var(--panel);border:0.5px solid var(--border);border-radius:12px;padding:18px}
+button.btn{border:1px solid var(--border-strong);background:var(--panel);color:var(--text);border-radius:var(--radius);padding:8px 14px;font-size:13px;font-weight:500;cursor:pointer;transition:background .15s}
+button.btn:hover{background:var(--panel-2)}
+button.btn:active{transform:scale(.98)}
+button.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button.btn.primary:hover{background:#21005E}
+.controls{width:250px;flex-shrink:0;display:flex;flex-direction:column;gap:13px;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:18px;max-height:86vh;overflow-y:auto}
 .ctrl label{display:block;font-size:13px;color:var(--text-secondary);margin-bottom:5px}
 .row{display:flex;align-items:center;gap:9px}
-.row input[type=range]{flex:1;accent-color:#F4F4F4}
+.row input[type=range]{flex:1;accent-color:#4000B8}
 .row .val{font-size:12px;font-weight:500;min-width:38px;text-align:right;color:var(--text)}
-select,input[type=color]{width:100%;border:0.5px solid var(--border-strong);border-radius:var(--radius);padding:7px 9px;font-size:13px;background:var(--panel-2);color:var(--text)}
+select,input[type=color]{width:100%;border:1px solid var(--border-strong);border-radius:var(--radius);padding:7px 9px;font-size:13px;background:#fff;color:var(--text)}
 input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
-.seg{font-size:11px;font-weight:500;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;padding-top:10px;margin-top:2px;border-top:0.5px solid var(--border)}
-.swatches{display:flex;gap:6px;margin-top:2px}
-.sw{flex:1;height:26px;border-radius:6px;border:0.5px solid var(--border);cursor:pointer}
-.perlin-only{display:none}
-@media(max-width:720px){.wrap{flex-direction:column}.controls{width:100%}}
+.seg{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;padding-top:10px;margin-top:2px;border-top:1px solid var(--border)}
+.swatches{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:2px}
+.sw{height:26px;border-radius:6px;border:1px solid var(--border);cursor:pointer;position:relative;overflow:hidden}
+.sw::after{content:"";position:absolute;right:0;top:0;bottom:0;width:38%;background:var(--fg)}
+.cond{display:none}
+.color2wrap{display:none}
+@media(max-width:760px){.wrap{flex-direction:column}.controls{width:100%;max-height:none}}
 </style>
 </head>
 <body>
 <div class="app">
   <header>
-    <h1>Pattern generator</h1>
-    <p>Fibonacci, Perlin flow field, grid and concentric layouts built from the mark. Non-overlapping by construction.</p>
+    <h1>HeyMax pattern generator</h1>
+    <p>Eight non-overlapping layouts built from the monogram, in brand colours.</p>
   </header>
 
   <div class="wrap">
@@ -58,15 +63,16 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
               <path d="M123 0C190.931 4.39387e-05 246 55.0699 246 123.001V254.2C246 322.131 190.931 377.201 123 377.201C55.0689 377.201 0 322.131 0 254.2V123.001C0 55.0699 55.0689 0 123 0ZM123 13.667C62.6168 13.667 13.667 62.6178 13.667 123.001V254.2C13.667 314.583 62.6168 363.534 123 363.534C183.383 363.534 232.333 314.583 232.333 254.2V123.001C232.333 62.6178 183.383 13.667 123 13.667ZM77.917 134.473L77.9756 136.655C79.1503 159.115 98.3309 177.346 122.307 177.346C146.281 177.344 165.458 159.114 166.633 136.655L166.691 134.473V106.6H192.674V267.381H166.691V187.687C154.55 197.313 139.082 203.072 122.307 203.072C105.531 203.072 90.0589 197.313 77.917 187.687V267.381H51.9336V106.6H77.917V134.473Z"/>
             </symbol>
           </defs>
-          <rect id="bgRect" width="600" height="600" fill="#0A0A0A"/>
+          <rect id="bgRect" width="600" height="600" fill="#21005E"/>
           <g id="elements"></g>
         </svg>
       </div>
       <div class="stage-foot">
         <span class="tag"><b id="actualCount">0</b> marks · <b id="patName">grid</b> · no overlap</span>
         <div class="actions">
-          <button class="export" id="exportBtn">Export SVG</button>
-          <button class="export" id="exportPngBtn">Export PNG</button>
+          <button class="btn" id="shuffleBtn">Shuffle seed</button>
+          <button class="btn" id="exportPngBtn">Export PNG</button>
+          <button class="btn primary" id="exportBtn">Export SVG</button>
         </div>
       </div>
     </div>
@@ -79,13 +85,17 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
           <option value="fibonacci">Fibonacci spiral</option>
           <option value="perlin">Perlin flow field</option>
           <option value="circles">Concentric circles</option>
+          <option value="halftone">Halftone</option>
+          <option value="waves">Waves</option>
+          <option value="orbit">Orbit rings</option>
+          <option value="cascade">Diagonal cascade</option>
         </select>
       </div>
 
       <div class="seg">Composition</div>
       <div class="ctrl">
         <label>Count <span style="color:var(--text-muted)">(target)</span></label>
-        <div class="row"><input type="range" id="count" min="9" max="400" value="121" step="1"><span class="val" id="countOut">121</span></div>
+        <div class="row"><input type="range" id="count" min="9" max="500" value="169" step="1"><span class="val" id="countOut">169</span></div>
       </div>
       <div class="ctrl">
         <label>Element size</label>
@@ -99,25 +109,46 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
         <label>Rotation</label>
         <div class="row"><input type="range" id="rotation" min="0" max="360" value="0" step="1"><span class="val" id="rotationOut">0&deg;</span></div>
       </div>
-      <div class="ctrl perlin-only">
-        <label>Flow turbulence</label>
+      <div class="ctrl cond" data-for="perlin halftone waves">
+        <label id="modLabel">Turbulence / wave detail</label>
         <div class="row"><input type="range" id="noiseScale" min="1" max="20" value="6" step="1"><span class="val" id="noiseScaleOut">6</span></div>
+      </div>
+      <div class="ctrl cond" data-for="halftone waves cascade orbit">
+        <label>Effect strength</label>
+        <div class="row"><input type="range" id="strength" min="0" max="100" value="70" step="1"><span class="val" id="strengthOut">70%</span></div>
       </div>
 
       <div class="seg">Colour</div>
-      <div class="swatches">
-        <div class="sw" data-bg="#0A0A0A" data-fg="#F4F4F4" style="background:#0A0A0A"></div>
-        <div class="sw" data-bg="#F4F4F4" data-fg="#111111" style="background:#F4F4F4"></div>
-        <div class="sw" data-bg="#16110E" data-fg="#D85A30" style="background:#16110E"></div>
-        <div class="sw" data-bg="#0C1420" data-fg="#378ADD" style="background:#0C1420"></div>
+      <div class="ctrl">
+        <label>Colour mode</label>
+        <select id="colorMode">
+          <option value="mono" selected>Single colour</option>
+          <option value="duotone">Duotone</option>
+          <option value="ramp">Brand ramp</option>
+        </select>
+      </div>
+      <div class="ctrl">
+        <label>Brand pairings</label>
+        <div class="swatches">
+          <div class="sw" data-bg="#21005E" data-fg="#F3EAFF" style="background:#21005E;--fg:#F3EAFF"></div>
+          <div class="sw" data-bg="#F3EAFF" data-fg="#21005E" style="background:#F3EAFF;--fg:#21005E"></div>
+          <div class="sw" data-bg="#4000B8" data-fg="#F9F5FF" style="background:#4000B8;--fg:#F9F5FF"></div>
+          <div class="sw" data-bg="#F9F5FF" data-fg="#4000B8" style="background:#F9F5FF;--fg:#4000B8"></div>
+          <div class="sw" data-bg="#FFFFFF" data-fg="#6E1FFF" style="background:#FFFFFF;--fg:#6E1FFF"></div>
+          <div class="sw" data-bg="#1A1A1A" data-fg="#D8C1FF" style="background:#1A1A1A;--fg:#D8C1FF"></div>
+        </div>
       </div>
       <div class="ctrl">
         <label>Background</label>
-        <input type="color" id="bgColor" value="#0A0A0A">
+        <input type="color" id="bgColor" value="#21005E">
       </div>
       <div class="ctrl">
         <label>Element fill</label>
-        <input type="color" id="elemColor" value="#F4F4F4">
+        <input type="color" id="elemColor" value="#F3EAFF">
+      </div>
+      <div class="ctrl color2wrap">
+        <label>Second fill (duotone)</label>
+        <input type="color" id="elemColor2" value="#6E1FFF">
       </div>
       <div class="ctrl">
         <label>Opacity</label>
@@ -134,13 +165,18 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
   const elems=document.getElementById('elements');
   const bgRect=document.getElementById('bgRect');
   const MONO_PATH="M123 0C190.931 4.39387e-05 246 55.0699 246 123.001V254.2C246 322.131 190.931 377.201 123 377.201C55.0689 377.201 0 322.131 0 254.2V123.001C0 55.0699 55.0689 0 123 0ZM123 13.667C62.6168 13.667 13.667 62.6178 13.667 123.001V254.2C13.667 314.583 62.6168 363.534 123 363.534C183.383 363.534 232.333 314.583 232.333 254.2V123.001C232.333 62.6178 183.383 13.667 123 13.667ZM77.917 134.473L77.9756 136.655C79.1503 159.115 98.3309 177.346 122.307 177.346C146.281 177.344 165.458 159.114 166.633 136.655L166.691 134.473V106.6H192.674V267.381H166.691V187.687C154.55 197.313 139.082 203.072 122.307 203.072C105.531 203.072 90.0589 197.313 77.917 187.687V267.381H51.9336V106.6H77.917V134.473Z";
+  const RAMP=['#D8C1FF','#B98CFF','#6E1FFF','#4000B8','#21005E'];
 
-  function fade(t){return t*t*t*(t*(t*6-15)+10)}
-  function lerp(a,b,t){return a+(b-a)*t}
-  const noise=(()=>{
+  let seed=42;
+  function makeNoise(){
+    let s=seed;
+    const rand=()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296;};
     const perm=new Uint8Array(512);
-    const src=[...Array(256).keys()].sort(()=>Math.random()-.5);
+    const src=[...Array(256).keys()];
+    for(let i=255;i>0;i--){const j=Math.floor(rand()*(i+1));[src[i],src[j]]=[src[j],src[i]];}
     for(let i=0;i<256;i++) perm[i]=perm[i+256]=src[i];
+    const fade=t=>t*t*t*(t*(t*6-15)+10);
+    const lerp=(a,b,t)=>a+(b-a)*t;
     function grad(h,x,y){const v=h&3,u=v<2?x:y,w=v<2?y:x;return((h&1)?-u:u)+((h&2)?-w:w);}
     return (x,y)=>{
       const X=Math.floor(x)&255,Y=Math.floor(y)&255;
@@ -149,54 +185,51 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
       return lerp(lerp(grad(perm[a],x,y),grad(perm[b],x-1,y),u),
                   lerp(grad(perm[a+1],x,y-1),grad(perm[b+1],x-1,y-1),u),v);
     };
-  })();
+  }
+  let noise=makeNoise();
 
   const $=id=>document.getElementById(id);
   function vals(){return{
     type:$('patType').value, count:+$('count').value,
     sizePct:+$('elemSize').value/100, spread:+$('spread').value/100,
-    rot:+$('rotation').value, bg:$('bgColor').value, color:$('elemColor').value,
-    op:+$('opacity').value/100, ns:+$('noiseScale').value/10
+    rot:+$('rotation').value, bg:$('bgColor').value,
+    color:$('elemColor').value, color2:$('elemColor2').value,
+    mode:$('colorMode').value,
+    op:+$('opacity').value/100, ns:+$('noiseScale').value/10,
+    str:+$('strength').value/100
   };}
 
   let lastItems=[];
 
-  function addEl(x,y,size,rotDeg,color,op){
-    const h=size,w=size*AR;
-    const u=document.createElementNS(NS,'use');
-    u.setAttribute('href','#mono');
-    u.setAttribute('width',w.toFixed(2));
-    u.setAttribute('height',h.toFixed(2));
-    u.setAttribute('transform',`translate(${x.toFixed(2)} ${y.toFixed(2)}) rotate(${rotDeg.toFixed(1)}) translate(${(-w/2).toFixed(2)} ${(-h/2).toFixed(2)})`);
-    u.setAttribute('fill',color);
-    if(op<1) u.setAttribute('opacity',op.toFixed(2));
-    elems.appendChild(u);
+  function gridCells(v){
+    const cols=Math.max(1,Math.round(Math.sqrt(v.count)));
+    const rows=Math.max(1,Math.round(v.count/cols));
+    const area=Math.min(W,H)*v.spread;
+    const ox=CX-area/2, oy=CY-area/2;
+    const cw=area/cols, ch=area/rows;
+    const maxSize=Math.min(ch,cw/AR);
+    return {cols,rows,ox,oy,cw,ch,maxSize};
   }
 
   function build(v){
     const out=[];
     if(v.type==='grid'){
-      const cols=Math.max(1,Math.round(Math.sqrt(v.count)));
-      const rows=Math.max(1,Math.round(v.count/cols));
-      const area=Math.min(W,H)*v.spread;
-      const ox=CX-area/2, oy=CY-area/2;
-      const cw=area/cols, ch=area/rows;
-      const size=Math.min(ch, cw/AR)*v.sizePct;
-      for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)
-        out.push({x:ox+cw*(c+.5),y:oy+ch*(r+.5),size,rot:0});
+      const g=gridCells(v), size=g.maxSize*v.sizePct;
+      for(let r=0;r<g.rows;r++)for(let c=0;c<g.cols;c++)
+        out.push({x:g.ox+g.cw*(c+.5),y:g.oy+g.ch*(r+.5),size,rot:0,t:(r*g.cols+c)/(g.rows*g.cols)});
     } else if(v.type==='fibonacci'){
       const n=v.count, ga=2*Math.PI*(1-1/1.618033988749895);
       const R=Math.min(W,H)*0.49*v.spread;
       const pts=[];
       for(let i=0;i<n;i++){const r=R*Math.sqrt((i+.5)/n),a=i*ga;
-        pts.push({x:CX+r*Math.cos(a),y:CY+r*Math.sin(a)});}
+        pts.push({x:CX+r*Math.cos(a),y:CY+r*Math.sin(a),t:i/n});}
       let minD=Infinity;
       for(let i=0;i<pts.length;i++)for(let j=i+1;j<pts.length;j++){
         const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=dx*dx+dy*dy;
         if(d<minD)minD=d;}
       const size=Math.sqrt(minD)*0.96*v.sizePct;
-      pts.forEach(p=>out.push({x:p.x,y:p.y,size,rot:0}));
-    } else if(v.type==='circles'){
+      pts.forEach(p=>out.push({x:p.x,y:p.y,size,rot:0,t:p.t}));
+    } else if(v.type==='circles'||v.type==='orbit'){
       const R=Math.min(W,H)*0.47*v.spread;
       const rings=Math.max(2,Math.round(Math.sqrt(v.count/2.8)));
       const step=R/rings;
@@ -205,40 +238,85 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
       const rd=[];
       for(let k=1;k<=rings;k++){
         const radius=step*k;
-        let nk=Math.max(1,Math.round(v.count*radius/sumR));
-        const arc=2*Math.PI*radius/nk;
-        minSize=Math.min(minSize,arc);
-        rd.push({radius,nk});
+        const nk=Math.max(1,Math.round(v.count*radius/sumR));
+        minSize=Math.min(minSize,2*Math.PI*radius/nk);
+        rd.push({radius,nk,k});
       }
       const size=Math.min(minSize,step)*0.92*v.sizePct;
-      rd.forEach(({radius,nk})=>{
-        for(let i=0;i<nk;i++){const a=2*Math.PI*i/nk;
-          out.push({x:CX+radius*Math.cos(a),y:CY+radius*Math.sin(a),size,rot:0});}
+      rd.forEach(({radius,nk,k})=>{
+        const phase=v.type==='orbit'?(k%2?1:-1)*v.str*180*(k/rings):0;
+        for(let i=0;i<nk;i++){
+          const a=2*Math.PI*i/nk + phase*Math.PI/180;
+          const rot=v.type==='orbit'?(a*180/Math.PI+90):0;
+          out.push({x:CX+radius*Math.cos(a),y:CY+radius*Math.sin(a),size,rot,t:k/rings});
+        }
       });
-    } else {
-      const cols=Math.max(1,Math.round(Math.sqrt(v.count)));
-      const rows=cols;
-      const area=Math.min(W,H)*v.spread;
-      const ox=CX-area/2, oy=CY-area/2;
-      const cw=area/cols, ch=area/rows;
-      const size=Math.min(ch,cw/AR)*v.sizePct;
-      for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
-        const x=ox+cw*(c+.5),y=oy+ch*(r+.5);
-        const ang=noise(x*v.ns/40,y*v.ns/40)*360;
-        out.push({x,y,size,rot:ang});
+    } else if(v.type==='perlin'){
+      const g=gridCells(v), size=g.maxSize*v.sizePct;
+      for(let r=0;r<g.rows;r++)for(let c=0;c<g.cols;c++){
+        const x=g.ox+g.cw*(c+.5),y=g.oy+g.ch*(r+.5);
+        const n=noise(x*v.ns/40,y*v.ns/40);
+        out.push({x,y,size,rot:n*360,t:(n+1)/2});
+      }
+    } else if(v.type==='halftone'){
+      const g=gridCells(v);
+      const maxD=Math.hypot(g.cw*g.cols,g.ch*g.rows)/2;
+      for(let r=0;r<g.rows;r++)for(let c=0;c<g.cols;c++){
+        const x=g.ox+g.cw*(c+.5),y=g.oy+g.ch*(r+.5);
+        const n=(noise(x*v.ns/60,y*v.ns/60)+1)/2;
+        const d=Math.hypot(x-CX,y-CY)/maxD;
+        const f=Math.max(0.12,1-v.str*(0.65*d+0.35*(1-n)));
+        out.push({x,y,size:g.maxSize*v.sizePct*f,rot:0,t:1-f});
+      }
+    } else if(v.type==='waves'){
+      const g=gridCells(v);
+      for(let r=0;r<g.rows;r++)for(let c=0;c<g.cols;c++){
+        const x=g.ox+g.cw*(c+.5),y=g.oy+g.ch*(r+.5);
+        const ph=(c/g.cols)*Math.PI*2*v.ns + r*0.6;
+        const s=Math.sin(ph);
+        const f=1-v.str*0.5*(1+s)*0.85;
+        out.push({x,y,size:g.maxSize*v.sizePct*Math.max(0.15,f),rot:s*v.str*60,t:(s+1)/2});
+      }
+    } else { // cascade
+      const g=gridCells(v);
+      const maxI=g.rows+g.cols-2||1;
+      for(let r=0;r<g.rows;r++)for(let c=0;c<g.cols;c++){
+        const x=g.ox+g.cw*(c+.5),y=g.oy+g.ch*(r+.5);
+        const t=(r+c)/maxI;
+        const f=Math.max(0.12,1-v.str*t);
+        out.push({x,y,size:g.maxSize*v.sizePct*f,rot:v.str*t*90,t});
       }
     }
     return out;
   }
 
+  function markColor(it,v){
+    if(v.mode==='mono') return v.color;
+    if(v.mode==='duotone') return it.t>0.5?v.color2:v.color;
+    const i=Math.min(RAMP.length-1,Math.floor(it.t*RAMP.length));
+    return RAMP[i];
+  }
+
   function draw(){
     const v=vals();
     bgRect.setAttribute('fill',v.bg);
-    document.querySelectorAll('.perlin-only').forEach(e=>e.style.display=v.type==='perlin'?'block':'none');
+    document.querySelectorAll('.cond').forEach(e=>{
+      e.style.display=e.dataset.for.split(' ').includes(v.type)?'block':'none';});
+    document.querySelector('.color2wrap').style.display=v.mode==='duotone'?'block':'none';
     const items=build(v);
     lastItems=items;
     elems.innerHTML='';
-    items.forEach(it=>addEl(it.x,it.y,it.size,it.rot+v.rot,v.color,v.op));
+    items.forEach(it=>{
+      const h=it.size,w=it.size*AR;
+      const u=document.createElementNS(NS,'use');
+      u.setAttribute('href','#mono');
+      u.setAttribute('width',w.toFixed(2));
+      u.setAttribute('height',h.toFixed(2));
+      u.setAttribute('transform',`translate(${it.x.toFixed(2)} ${it.y.toFixed(2)}) rotate(${(it.rot+v.rot).toFixed(1)}) translate(${(-w/2).toFixed(2)} ${(-h/2).toFixed(2)})`);
+      u.setAttribute('fill',markColor(it,v));
+      if(v.op<1) u.setAttribute('opacity',v.op.toFixed(2));
+      elems.appendChild(u);
+    });
     $('actualCount').textContent=items.length;
     $('patName').textContent=$('patType').selectedOptions[0].textContent.toLowerCase();
   }
@@ -247,14 +325,15 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
     const el=$(id),out=outId?$(outId):null;
     el.addEventListener('input',()=>{if(out)out.textContent=fmt?fmt(el.value):el.value;draw();});
   }
-  bind('patType');
-  bind('count','countOut');
-  bind('elemSize','elemSizeOut',v=>v+'%');
-  bind('spread','spreadOut',v=>v+'%');
-  bind('rotation','rotationOut',v=>v+'°');
+  bind('patType');bind('count','countOut');
+  bind('elemSize','elemSizeOut',x=>x+'%');
+  bind('spread','spreadOut',x=>x+'%');
+  bind('rotation','rotationOut',x=>x+'°');
   bind('noiseScale','noiseScaleOut');
-  bind('bgColor');bind('elemColor');
-  bind('opacity','opacityOut',v=>v+'%');
+  bind('strength','strengthOut',x=>x+'%');
+  bind('bgColor');bind('elemColor');bind('elemColor2');
+  bind('colorMode');
+  bind('opacity','opacityOut',x=>x+'%');
 
   document.querySelectorAll('.sw').forEach(sw=>{
     sw.addEventListener('click',()=>{
@@ -262,6 +341,12 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
       $('elemColor').value=sw.dataset.fg;
       draw();
     });
+  });
+
+  $('shuffleBtn').addEventListener('click',()=>{
+    seed=(Math.random()*1e9)>>>0;
+    noise=makeNoise();
+    draw();
   });
 
   function buildStandaloneSVG(px){
@@ -272,7 +357,7 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
       const h=it.size,w=it.size*AR;
       const tr=`translate(${(it.x*s).toFixed(2)} ${(it.y*s).toFixed(2)}) rotate(${(it.rot+v.rot).toFixed(1)}) scale(${s.toFixed(4)}) translate(${(-w/2).toFixed(2)} ${(-h/2).toFixed(2)}) scale(${(w/246).toFixed(5)} ${(h/378).toFixed(5)})`;
       const op=v.op<1?` fill-opacity="${v.op.toFixed(2)}"`:'';
-      body+=`<path transform="${tr}" d="${MONO_PATH}" fill="${v.color}"${op}/>`;
+      body+=`<path transform="${tr}" d="${MONO_PATH}" fill="${markColor(it,v)}"${op}/>`;
     });
     return `<?xml version="1.0" encoding="UTF-8"?>\n`+
       `<svg xmlns="${NS}" width="${px}" height="${px}" viewBox="0 0 ${px} ${px}">`+
@@ -288,23 +373,21 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
   }
 
   $('exportBtn').addEventListener('click',()=>{
-    const str=buildStandaloneSVG(1080);
-    download(new Blob([str],{type:'image/svg+xml'}),'mono-pattern-'+$('patType').value+'.svg');
+    download(new Blob([buildStandaloneSVG(1080)],{type:'image/svg+xml'}),
+      'heymax-pattern-'+$('patType').value+'.svg');
   });
 
   $('exportPngBtn').addEventListener('click',()=>{
     const px=2160;
-    const str=buildStandaloneSVG(px);
-    const svgBlob=new Blob([str],{type:'image/svg+xml'});
+    const svgBlob=new Blob([buildStandaloneSVG(px)],{type:'image/svg+xml'});
     const url=URL.createObjectURL(svgBlob);
     const img=new Image();
     img.onload=()=>{
       const canvas=document.createElement('canvas');
       canvas.width=px;canvas.height=px;
-      const ctx=canvas.getContext('2d');
-      ctx.drawImage(img,0,0,px,px);
+      canvas.getContext('2d').drawImage(img,0,0,px,px);
       URL.revokeObjectURL(url);
-      canvas.toBlob(b=>download(b,'mono-pattern-'+$('patType').value+'.png'),'image/png');
+      canvas.toBlob(b=>download(b,'heymax-pattern-'+$('patType').value+'.png'),'image/png');
     };
     img.src=url;
   });
