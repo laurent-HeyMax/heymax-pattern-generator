@@ -64,6 +64,7 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
             </symbol>
           </defs>
           <rect id="bgRect" width="600" height="600" fill="#21005E"/>
+          <g id="bgFx"></g>
           <g id="elements"></g>
         </svg>
       </div>
@@ -149,6 +150,22 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
         </div>
       </div>
       <div class="ctrl">
+        <label>Background style</label>
+        <select id="bgStyle">
+          <option value="solid" selected>Solid</option>
+          <option value="grad1">Gradient — 1 tint</option>
+          <option value="grad2">Gradient — 2 tints</option>
+        </select>
+      </div>
+      <div class="ctrl bgbase" style="display:none">
+        <label>Gradient base</label>
+        <div class="swatches" style="grid-template-columns:repeat(3,1fr)">
+          <div class="sw" data-base="#F4F4F4" style="background:#F4F4F4;--fg:#F4F4F4" title="Neutral"></div>
+          <div class="sw" data-base="#F9F5FF" style="background:#F9F5FF;--fg:#F9F5FF" title="Brand"></div>
+          <div class="sw" data-base="#FEF7FD" style="background:#FEF7FD;--fg:#FEF7FD" title="Pink"></div>
+        </div>
+      </div>
+      <div class="ctrl">
         <label>Background</label>
         <input type="color" id="bgColor" value="#21005E">
       </div>
@@ -215,7 +232,7 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
     sizePct:+$('elemSize').value/100, spread:+$('spread').value/100,
     rot:+$('rotation').value, bg:$('bgColor').value,
     color:$('elemColor').value, color2:$('elemColor2').value,
-    mode:$('colorMode').value,
+    mode:$('colorMode').value, bgStyle:$('bgStyle').value,
     op:+$('opacity').value/100, ns:+$('noiseScale').value/10,
     str:+$('strength').value/100
   };}
@@ -318,10 +335,34 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
     return RAMP[i];
   }
 
+  const TINTS=['#CFF3F8','#FBDFF2','#CDB4FF','#E4D9FF'];
+  function bgFxMarkup(v,s,prefix){
+    if(v.bgStyle==='solid') return '';
+    let r=(seed^0x9e3779b9)>>>0;
+    const rnd=()=>{r=(r*1664525+1013904223)>>>0;return r/4294967296;};
+    const n=v.bgStyle==='grad2'?2:1;
+    const base=Math.floor(rnd()*TINTS.length);
+    let defs='',shapes='';
+    for(let i=0;i<n;i++){
+      const tint=TINTS[(base+i*2)%TINTS.length];
+      const id=prefix+'tint'+i;
+      const cx=(0.2+rnd()*0.6)*W*s;
+      const cy=(n===2?(i===0?0.05+rnd()*0.3:0.65+rnd()*0.3):0.15+rnd()*0.7)*H*s;
+      const rx=(0.5+rnd()*0.35)*Math.max(W,H)*s;
+      const ry=rx*(0.45+rnd()*0.55);
+      const rot=Math.round(rnd()*180);
+      defs+=`<radialGradient id="${id}"><stop offset="0%" stop-color="${tint}" stop-opacity="0.9"/><stop offset="100%" stop-color="${tint}" stop-opacity="0"/></radialGradient>`;
+      shapes+=`<ellipse cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" rx="${rx.toFixed(1)}" ry="${ry.toFixed(1)}" transform="rotate(${rot} ${cx.toFixed(1)} ${cy.toFixed(1)})" fill="url(#${id})"/>`;
+    }
+    return `<defs>${defs}</defs>${shapes}`;
+  }
+
   function draw(){
     const v=vals();
     applyRatio($('ratio').value);
     bgRect.setAttribute('fill',v.bg);
+    document.getElementById('bgFx').innerHTML=bgFxMarkup(v,1,'pv');
+    document.querySelector('.bgbase').style.display=v.bgStyle==='solid'?'none':'block';
     document.querySelectorAll('.cond').forEach(e=>{
       e.style.display=e.dataset.for.split(' ').includes(v.type)?'block':'none';});
     document.querySelector('.color2wrap').style.display=v.mode==='duotone'?'block':'none';
@@ -355,6 +396,25 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
   bind('strength','strengthOut',x=>x+'%');
   bind('bgColor');bind('elemColor');bind('elemColor2');
   bind('colorMode');
+  $('bgStyle').addEventListener('input',()=>{
+    if($('bgStyle').value!=='solid'){
+      const c=$('bgColor').value;
+      const lum=parseInt(c.slice(1,3),16)*0.299+parseInt(c.slice(3,5),16)*0.587+parseInt(c.slice(5,7),16)*0.114;
+      if(lum<180){
+        $('bgColor').value='#F9F5FF';
+        if($('colorMode').value==='mono') $('elemColor').value='#21005E';
+      }
+    }
+    draw();
+  });
+
+  document.querySelectorAll('.sw[data-base]').forEach(sw=>{
+    sw.addEventListener('click',()=>{
+      $('bgColor').value=sw.dataset.base;
+      if($('colorMode').value==='mono') $('elemColor').value='#21005E';
+      draw();
+    });
+  });
   bind('opacity','opacityOut',x=>x+'%');
 
   document.querySelectorAll('.sw').forEach(sw=>{
@@ -384,7 +444,7 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
     });
     return `<?xml version="1.0" encoding="UTF-8"?>\n`+
       `<svg xmlns="${NS}" width="${outW}" height="${outH}" viewBox="0 0 ${outW} ${outH}">`+
-      `<rect width="${outW}" height="${outH}" fill="${v.bg}"/>${body}</svg>`;
+      `<rect width="${outW}" height="${outH}" fill="${v.bg}"/>${bgFxMarkup(v,s,'ex')}${body}</svg>`;
   }
 
   function download(blob,name){
