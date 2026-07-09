@@ -264,7 +264,7 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
       const size=Math.sqrt(minD)*0.96*v.sizePct;
       pts.forEach(p=>out.push({x:p.x,y:p.y,size,rot:0,t:p.t}));
     } else if(v.type==='circles'||v.type==='orbit'){
-      const R=Math.min(W,H)*0.47*v.spread;
+      const R=(Math.hypot(W,H)/2)*v.spread;
       const rings=Math.max(2,Math.round(Math.sqrt(v.count/2.8)));
       const step=R/rings;
       const sumR=step*rings*(rings+1)/2;
