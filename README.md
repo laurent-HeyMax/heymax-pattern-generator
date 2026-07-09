@@ -22,7 +22,7 @@ Every layout sizes its elements from its own spacing, so marks never overlap.
 
 - Pattern, count, element size, spread, rotation
 - Turbulence / wave detail and effect strength (per pattern)
-- Colour modes: single, duotone, brand ramp
+- Colour modes: single, brand ramp
 - Brand pairing swatches, background / element colour, opacity
 - Shuffle seed for noise-driven layouts
 

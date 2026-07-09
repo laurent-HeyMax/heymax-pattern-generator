@@ -44,7 +44,6 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
 .sw{height:26px;border-radius:6px;border:1px solid var(--border);cursor:pointer;position:relative;overflow:hidden}
 .sw::after{content:"";position:absolute;right:0;top:0;bottom:0;width:38%;background:var(--fg)}
 .cond{display:none}
-.color2wrap{display:none}
 @media(max-width:760px){.wrap{flex-direction:column}.controls{width:100%;max-height:none}}
 </style>
 </head>
@@ -135,7 +134,6 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
         <label>Colour mode</label>
         <select id="colorMode">
           <option value="mono" selected>Single colour</option>
-          <option value="duotone">Duotone</option>
           <option value="ramp">Brand ramp</option>
         </select>
       </div>
@@ -174,10 +172,6 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
       <div class="ctrl">
         <label>Element fill</label>
         <input type="color" id="elemColor" value="#F3EAFF">
-      </div>
-      <div class="ctrl color2wrap">
-        <label>Second fill (duotone)</label>
-        <input type="color" id="elemColor2" value="#6E1FFF">
       </div>
       <div class="ctrl">
         <label>Opacity</label>
@@ -233,7 +227,7 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
     type:$('patType').value, count:+$('count').value,
     sizePct:+$('elemSize').value/100, spread:+$('spread').value/100,
     rot:+$('rotation').value, bg:$('bgColor').value,
-    color:$('elemColor').value, color2:$('elemColor2').value,
+    color:$('elemColor').value,
     mode:$('colorMode').value, bgStyle:$('bgStyle').value,
     op:+$('opacity').value/100, ns:+$('noiseScale').value/10,
     str:+$('strength').value/100
@@ -332,7 +326,6 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
 
   function markColor(it,v){
     if(v.mode==='mono') return v.color;
-    if(v.mode==='duotone') return it.t>0.5?v.color2:v.color;
     const i=Math.min(RAMP.length-1,Math.floor(it.t*RAMP.length));
     return RAMP[i];
   }
@@ -369,7 +362,6 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
     document.querySelector('.bgbase').style.display=(v.bgStyle==='grad1'||v.bgStyle==='grad2')?'block':'none';
     document.querySelectorAll('.cond').forEach(e=>{
       e.style.display=e.dataset.for.split(' ').includes(v.type)?'block':'none';});
-    document.querySelector('.color2wrap').style.display=v.mode==='duotone'?'block':'none';
     const items=build(v);
     lastItems=items;
     elems.innerHTML='';
@@ -398,7 +390,7 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
   bind('rotation','rotationOut',x=>x+'°');
   bind('noiseScale','noiseScaleOut');
   bind('strength','strengthOut',x=>x+'%');
-  bind('bgColor');bind('elemColor');bind('elemColor2');
+  bind('bgColor');bind('elemColor');
   bind('colorMode');
   $('bgStyle').addEventListener('input',()=>{
     const st=$('bgStyle').value;
