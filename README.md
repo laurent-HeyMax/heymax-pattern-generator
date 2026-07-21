@@ -23,7 +23,9 @@ Every layout sizes its elements from its own spacing, so marks never overlap.
 - Pattern, count, element size, spread, rotation
 - Turbulence / wave detail and effect strength (per pattern)
 - Colour modes: single, brand ramp
-- Brand pairing swatches, background / element colour, opacity
+- Backgrounds: brand gradients (1–2 tints), solid bases, or transparent alpha
+- Brand pairing swatches, element colour, shape opacity
+- Background-only export (no marks) for gradient backdrops
 - Shuffle seed for noise-driven layouts
 
 ## Export

@@ -151,31 +151,33 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
       <div class="ctrl">
         <label>Background style</label>
         <select id="bgStyle">
-          <option value="solid" selected>Solid</option>
-          <option value="grad1">Gradient — 1 tint</option>
+          <option value="grad1" selected>Gradient — 1 tint</option>
           <option value="grad2">Gradient — 2 tints</option>
+          <option value="solid">Solid</option>
           <option value="alpha">Transparent (alpha)</option>
         </select>
       </div>
-      <div class="ctrl bgbase" style="display:none">
-        <label>Gradient base</label>
+      <div class="ctrl bgbase">
+        <label>Background base</label>
         <div class="swatches" style="grid-template-columns:repeat(3,1fr)">
           <div class="sw" data-base="#F4F4F4" style="background:#F4F4F4;--fg:#F4F4F4" title="Neutral"></div>
           <div class="sw" data-base="#F9F5FF" style="background:#F9F5FF;--fg:#F9F5FF" title="Brand"></div>
           <div class="sw" data-base="#FEF7FD" style="background:#FEF7FD;--fg:#FEF7FD" title="Pink"></div>
         </div>
       </div>
-      <div class="ctrl">
-        <label>Background</label>
-        <input type="color" id="bgColor" value="#21005E">
-      </div>
+      <input type="hidden" id="bgColor" value="#F9F5FF">
       <div class="ctrl">
         <label>Element fill</label>
-        <input type="color" id="elemColor" value="#F3EAFF">
+        <input type="color" id="elemColor" value="#21005E">
       </div>
       <div class="ctrl">
-        <label>Opacity</label>
-        <div class="row"><input type="range" id="opacity" min="20" max="100" value="100" step="1"><span class="val" id="opacityOut">100%</span></div>
+        <label>Shape opacity</label>
+        <div class="row"><input type="range" id="opacity" min="10" max="100" value="100" step="1"><span class="val" id="opacityOut">100%</span></div>
+      </div>
+
+      <div class="seg">Export</div>
+      <div class="ctrl">
+        <label class="row" style="cursor:pointer;color:var(--text)"><input type="checkbox" id="bgOnly" style="accent-color:#4000B8">Background only (no marks)</label>
       </div>
     </div>
   </div>
@@ -253,7 +255,7 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
         out.push({x:g.ox+g.cw*(c+.5),y:g.oy+g.ch*(r+.5),size,rot:0,t:(r*g.cols+c)/(g.rows*g.cols)});
     } else if(v.type==='fibonacci'){
       const n=v.count, ga=2*Math.PI*(1-1/1.618033988749895);
-      const R=Math.min(W,H)*0.49*v.spread;
+      const R=(Math.hypot(W,H)/2)*v.spread;
       const pts=[];
       for(let i=0;i<n;i++){const r=R*Math.sqrt((i+.5)/n),a=i*ga;
         pts.push({x:CX+r*Math.cos(a),y:CY+r*Math.sin(a),t:i/n});}
@@ -359,7 +361,7 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
     bgRect.setAttribute('fill',alpha?'none':v.bg);
     document.querySelector('.canvas-shell').classList.toggle('alpha',alpha);
     document.getElementById('bgFx').innerHTML=alpha?'':bgFxMarkup(v,1,'pv');
-    document.querySelector('.bgbase').style.display=(v.bgStyle==='grad1'||v.bgStyle==='grad2')?'block':'none';
+    document.querySelector('.bgbase').style.display=alpha?'none':'block';
     document.querySelectorAll('.cond').forEach(e=>{
       e.style.display=e.dataset.for.split(' ').includes(v.type)?'block':'none';});
     const items=build(v);
@@ -414,7 +416,7 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
   });
   bind('opacity','opacityOut',x=>x+'%');
 
-  document.querySelectorAll('.sw').forEach(sw=>{
+  document.querySelectorAll('.sw[data-bg]').forEach(sw=>{
     sw.addEventListener('click',()=>{
       $('bgColor').value=sw.dataset.bg;
       $('elemColor').value=sw.dataset.fg;
@@ -433,7 +435,8 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
     const s=px/Math.min(W,H);
     const outW=Math.round(W*s), outH=Math.round(H*s);
     let body='';
-    lastItems.forEach(it=>{
+    const items=$('bgOnly').checked?[]:lastItems;
+    items.forEach(it=>{
       const h=it.size,w=it.size*AR;
       const tr=`translate(${(it.x*s).toFixed(2)} ${(it.y*s).toFixed(2)}) rotate(${(it.rot+v.rot).toFixed(1)}) scale(${s.toFixed(4)}) translate(${(-w/2).toFixed(2)} ${(-h/2).toFixed(2)}) scale(${(w/246).toFixed(5)} ${(h/378).toFixed(5)})`;
       const op=v.op<1?` fill-opacity="${v.op.toFixed(2)}"`:'';
@@ -455,7 +458,7 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
 
   $('exportBtn').addEventListener('click',()=>{
     download(new Blob([buildStandaloneSVG(1080)],{type:'image/svg+xml'}),
-      'heymax-pattern-'+$('patType').value+'-'+$('ratio').value.replace(':','x')+($('bgStyle').value==='alpha'?'-alpha':'')+'.svg');
+      'heymax-pattern-'+$('patType').value+'-'+$('ratio').value.replace(':','x')+($('bgStyle').value==='alpha'?'-alpha':'')+($('bgOnly').checked?'-bg':'')+'.svg');
   });
 
   $('exportPngBtn').addEventListener('click',()=>{
@@ -470,7 +473,7 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
       canvas.width=outW;canvas.height=outH;
       canvas.getContext('2d').drawImage(img,0,0,outW,outH);
       URL.revokeObjectURL(url);
-      canvas.toBlob(b=>download(b,'heymax-pattern-'+$('patType').value+'-'+$('ratio').value.replace(':','x')+($('bgStyle').value==='alpha'?'-alpha':'')+'.png'),'image/png');
+      canvas.toBlob(b=>download(b,'heymax-pattern-'+$('patType').value+'-'+$('ratio').value.replace(':','x')+($('bgStyle').value==='alpha'?'-alpha':'')+($('bgOnly').checked?'-bg':'')+'.png'),'image/png');
     };
     img.src=url;
   });
