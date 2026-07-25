@@ -42,6 +42,7 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
 .seg{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.07em;padding-top:10px;margin-top:2px;border-top:1px solid var(--border)}
 .swatches{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin-top:2px}
 .sw{height:26px;border-radius:6px;border:1px solid var(--border);cursor:pointer;position:relative;overflow:hidden}
+.sw.sel{outline:2px solid #4000B8;outline-offset:1px}
 .sw::after{content:"";position:absolute;right:0;top:0;bottom:0;width:38%;background:var(--fg)}
 .cond{display:none}
 @media(max-width:760px){.wrap{flex-direction:column}.controls{width:100%;max-height:none}}
@@ -143,7 +144,7 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
         <div class="swatches" style="grid-template-columns:repeat(3,1fr)">
           <div class="sw" data-bg="#F3EAFF" data-fg="#21005E" style="background:#F3EAFF;--fg:#21005E"></div>
           <div class="sw" data-bg="#F9F5FF" data-fg="#4000B8" style="background:#F9F5FF;--fg:#4000B8"></div>
-          <div class="sw" data-bg="#FFFFFF" data-fg="#6E1FFF" style="background:#FFFFFF;--fg:#6E1FFF"></div>
+          <div class="sw" data-bg="#FFFFFF" data-fg="#4000B8" style="background:#FFFFFF;--fg:#4000B8"></div>
         </div>
       </div>
       <div class="ctrl">
@@ -166,7 +167,16 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
       <input type="hidden" id="bgColor" value="#F9F5FF">
       <div class="ctrl">
         <label>Element fill</label>
-        <input type="color" id="elemColor" value="#21005E">
+        <div class="swatches" id="fillSwatches" style="grid-template-columns:repeat(7,1fr)">
+          <div class="sw fill" data-fill="#21005E" style="background:#21005E;--fg:#21005E" title="Primary"></div>
+          <div class="sw fill" data-fill="#F3EAFF" style="background:#F3EAFF;--fg:#F3EAFF" title="Secondary"></div>
+          <div class="sw fill" data-fill="#4000B8" style="background:#4000B8;--fg:#4000B8" title="Tertiary"></div>
+          <div class="sw fill" data-fill="#FFFFFF" style="background:#FFFFFF;--fg:#FFFFFF" title="White"></div>
+          <div class="sw fill" data-fill="#FCFAFF" style="background:#FCFAFF;--fg:#FCFAFF" title="Neutral 005"></div>
+          <div class="sw fill" data-fill="#313131" style="background:#313131;--fg:#313131" title="Neutral 090"></div>
+          <div class="sw fill" data-fill="#1A1A1A" style="background:#1A1A1A;--fg:#1A1A1A" title="Neutral 100"></div>
+        </div>
+        <input type="hidden" id="elemColor" value="#21005E">
       </div>
       <div class="ctrl">
         <label>Shape opacity</label>
@@ -410,19 +420,29 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
   document.querySelectorAll('.sw[data-base]').forEach(sw=>{
     sw.addEventListener('click',()=>{
       $('bgColor').value=sw.dataset.base;
-      if($('colorMode').value==='mono') $('elemColor').value='#21005E';
+      if($('colorMode').value==='mono') selectFill('#21005E');
       draw();
     });
   });
   bind('opacity','opacityOut',x=>x+'%');
 
+  function selectFill(color){
+    $('elemColor').value=color;
+    document.querySelectorAll('.sw.fill').forEach(s=>
+      s.classList.toggle('sel',s.dataset.fill.toLowerCase()===color.toLowerCase()));
+  }
+  document.querySelectorAll('.sw.fill').forEach(sw=>{
+    sw.addEventListener('click',()=>{selectFill(sw.dataset.fill);draw();});
+  });
+
   document.querySelectorAll('.sw[data-bg]').forEach(sw=>{
     sw.addEventListener('click',()=>{
       $('bgColor').value=sw.dataset.bg;
-      $('elemColor').value=sw.dataset.fg;
+      selectFill(sw.dataset.fg);
       draw();
     });
   });
+  selectFill($('elemColor').value);
 
   $('shuffleBtn').addEventListener('click',()=>{
     seed=(Math.random()*1e9)>>>0;
