@@ -71,6 +71,7 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
       <div class="stage-foot">
         <span class="tag"><b id="actualCount">0</b> marks · <b id="patName">grid</b> · no overlap</span>
         <div class="actions">
+          <button class="btn" id="moveGradBtn">Move gradient</button>
           <button class="btn" id="shuffleBtn">Shuffle seed</button>
           <button class="btn" id="exportPngBtn">Export PNG</button>
           <button class="btn primary" id="exportBtn">Export SVG</button>
@@ -139,13 +140,10 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
       </div>
       <div class="ctrl">
         <label>Brand pairings</label>
-        <div class="swatches">
-          <div class="sw" data-bg="#21005E" data-fg="#F3EAFF" style="background:#21005E;--fg:#F3EAFF"></div>
+        <div class="swatches" style="grid-template-columns:repeat(3,1fr)">
           <div class="sw" data-bg="#F3EAFF" data-fg="#21005E" style="background:#F3EAFF;--fg:#21005E"></div>
-          <div class="sw" data-bg="#4000B8" data-fg="#F9F5FF" style="background:#4000B8;--fg:#F9F5FF"></div>
           <div class="sw" data-bg="#F9F5FF" data-fg="#4000B8" style="background:#F9F5FF;--fg:#4000B8"></div>
           <div class="sw" data-bg="#FFFFFF" data-fg="#6E1FFF" style="background:#FFFFFF;--fg:#6E1FFF"></div>
-          <div class="sw" data-bg="#1A1A1A" data-fg="#D8C1FF" style="background:#1A1A1A;--fg:#D8C1FF"></div>
         </div>
       </div>
       <div class="ctrl">
@@ -333,9 +331,10 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
   }
 
   const TINTS=['#CFF3F8','#FBDFF2','#CDB4FF','#E4D9FF'];
+  let bgSeed=7;
   function bgFxMarkup(v,s,prefix){
     if(v.bgStyle==='solid') return '';
-    let r=(seed^0x9e3779b9)>>>0;
+    let r=(bgSeed^0x9e3779b9)>>>0;
     const rnd=()=>{r=(r*1664525+1013904223)>>>0;return r/4294967296;};
     const n=v.bgStyle==='grad2'?2:1;
     const base=Math.floor(rnd()*TINTS.length);
@@ -362,6 +361,7 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
     document.querySelector('.canvas-shell').classList.toggle('alpha',alpha);
     document.getElementById('bgFx').innerHTML=alpha?'':bgFxMarkup(v,1,'pv');
     document.querySelector('.bgbase').style.display=alpha?'none':'block';
+    $('moveGradBtn').style.display=(v.bgStyle==='grad1'||v.bgStyle==='grad2')?'':'none';
     document.querySelectorAll('.cond').forEach(e=>{
       e.style.display=e.dataset.for.split(' ').includes(v.type)?'block':'none';});
     const items=build(v);
@@ -427,6 +427,11 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
   $('shuffleBtn').addEventListener('click',()=>{
     seed=(Math.random()*1e9)>>>0;
     noise=makeNoise();
+    draw();
+  });
+
+  $('moveGradBtn').addEventListener('click',()=>{
+    bgSeed=(Math.random()*1e9)>>>0;
     draw();
   });
 
