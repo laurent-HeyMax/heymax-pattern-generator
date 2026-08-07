@@ -216,8 +216,8 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
           <input type="hidden" id="logoColor" value="#21005E">
         </div>
         <div class="ctrl">
-          <label>Exclusion padding <span style="color:var(--text-muted)">(% logo width)</span></label>
-          <div class="row"><input type="range" id="logoPad" min="0" max="50" value="8" step="1"><span class="val" id="logoPadOut">8%</span></div>
+          <label>Clearance <span style="color:var(--text-muted)">(% logo width)</span></label>
+          <div class="row"><input type="range" id="clearance" min="0" max="40" value="8" step="1"><span class="val" id="clearanceOut">8%</span></div>
         </div>
       </div>
 
@@ -296,7 +296,7 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
     str:+$('strength').value/100,
     showLogo:$('showLogo').checked, logoSize:+$('logoSize').value/100,
     logoX:+$('logoX').value, logoY:+$('logoY').value,
-    logoColor:$('logoColor').value, logoPad:+$('logoPad').value/100
+    logoColor:$('logoColor').value, clearance:+$('clearance').value/100
   };}
 
   // Logo bounding box in canvas coordinates, centred on (logoX%, logoY%).
@@ -305,19 +305,79 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
     const cx=v.logoX/100*W, cy=v.logoY/100*H;
     return {x:cx-w/2,y:cy-h/2,w,h};
   }
-  // Placement-time exclusion test: true when a mark overlaps the padded logo box.
-  // Uses the mark's bounding circle (rotation-invariant) vs the rect, so a mark is
-  // never partly clipped by the logo — it's simply not placed.
+  // 1-D squared Euclidean distance transform (Felzenszwalb & Huttenlocher).
+  function edt1d(f,d,v,z,n){
+    v[0]=0; z[0]=-1e20; z[1]=1e20;
+    let k=0;
+    for(let q=1;q<n;q++){
+      let s=((f[q]+q*q)-(f[v[k]]+v[k]*v[k]))/(2*q-2*v[k]);
+      while(s<=z[k]){k--;s=((f[q]+q*q)-(f[v[k]]+v[k]*v[k]))/(2*q-2*v[k]);}
+      k++; v[k]=q; z[k]=s; z[k+1]=1e20;
+    }
+    k=0;
+    for(let q=0;q<n;q++){
+      while(z[k+1]<q) k++;
+      d[q]=(q-v[k])*(q-v[k])+f[v[k]];
+    }
+  }
+  function edt2d(data,w,h){
+    const m=Math.max(w,h);
+    const f=new Float64Array(m),d=new Float64Array(m),v=new Int32Array(m),z=new Float64Array(m+1);
+    for(let x=0;x<w;x++){
+      for(let y=0;y<h;y++) f[y]=data[y*w+x];
+      edt1d(f,d,v,z,h);
+      for(let y=0;y<h;y++) data[y*w+x]=d[y];
+    }
+    for(let y=0;y<h;y++){
+      for(let x=0;x<w;x++) f[x]=data[y*w+x];
+      edt1d(f,d,v,z,w);
+      for(let x=0;x<w;x++) data[y*w+x]=d[x];
+    }
+  }
+
+  // Distance-to-glyph field for the logo, cached by geometry. Rasterises the
+  // wordmark, then EDT gives every canvas point its distance to the nearest
+  // filled glyph pixel. Moving Clearance re-queries this without rebuilding.
+  let logoField=null, logoFieldKey='';
+  function getLogoField(v){
+    const b=logoBox(v);
+    const key=`${W}x${H}|${b.x.toFixed(1)}|${b.y.toFixed(1)}|${b.w.toFixed(1)}`;
+    if(logoField && logoFieldKey===key) return logoField;
+    const scale=384/Math.max(W,H);
+    const fw=Math.max(1,Math.round(W*scale)), fh=Math.max(1,Math.round(H*scale));
+    const cv=document.createElement('canvas'); cv.width=fw; cv.height=fh;
+    const ctx=cv.getContext('2d');
+    const gs=(b.w*scale)/LOGO_VB_W;
+    ctx.setTransform(gs,0,0,gs,b.x*scale,b.y*scale);
+    ctx.fillStyle='#000';
+    LOGO_DS.forEach(d=>ctx.fill(new Path2D(d)));
+    ctx.setTransform(1,0,0,1,0,0);
+    const a=ctx.getImageData(0,0,fw,fh).data;
+    const data=new Float64Array(fw*fh);
+    for(let i=0;i<fw*fh;i++) data[i]=a[i*4+3]>32?0:1e20;
+    edt2d(data,fw,fh);
+    const dist=new Float32Array(fw*fh);
+    for(let i=0;i<fw*fh;i++) dist[i]=Math.sqrt(data[i])/scale;
+    logoField={dist,fw,fh,scale};
+    logoFieldKey=key;
+    return logoField;
+  }
+
+  // Placement-time exclusion: a mark is dropped when its bounding circle comes
+  // within the clearance distance of the logo's glyph outline (not its box), so
+  // marks can tuck into the negative space around the letterforms and never
+  // overlap the logo. Clearance is measured outward from the glyph, in % of
+  // logo width; at 0% the zone hugs the letterforms tightly.
   function makeExcluder(v){
     if(!v.showLogo) return null;
-    const b=logoBox(v), pad=v.logoPad*b.w;
-    const rx0=b.x-pad, ry0=b.y-pad, rx1=b.x+b.w+pad, ry1=b.y+b.h+pad;
-    const K=Math.hypot(AR,1)/2; // half-diagonal factor of a size×(size*AR) mark
+    const b=logoBox(v);
+    const {dist,fw,fh,scale}=getLogoField(v);
+    const clr=v.clearance*b.w;
+    const K=Math.hypot(AR,1)/2; // half-diagonal of a size×(size*AR) mark
     return (x,y,size)=>{
-      const r=size*K;
-      const nx=Math.max(rx0,Math.min(x,rx1)), ny=Math.max(ry0,Math.min(y,ry1));
-      const dx=x-nx, dy=y-ny;
-      return dx*dx+dy*dy < r*r;
+      const ix=Math.min(fw-1,Math.max(0,Math.round(x*scale)));
+      const iy=Math.min(fh-1,Math.max(0,Math.round(y*scale)));
+      return dist[iy*fw+ix] < size*K + clr;
     };
   }
 
@@ -547,7 +607,7 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
   bind('logoSize','logoSizeOut',x=>x+'%');
   bind('logoX','logoXOut',x=>x+'%');
   bind('logoY','logoYOut',x=>x+'%');
-  bind('logoPad','logoPadOut',x=>x+'%');
+  bind('clearance','clearanceOut',x=>x+'%');
   function selectLogo(color){
     $('logoColor').value=color;
     document.querySelectorAll('.sw.logosw').forEach(s=>
