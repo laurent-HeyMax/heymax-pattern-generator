@@ -63,10 +63,12 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
             <symbol id="mono" viewBox="0 0 246 378">
               <path d="M123 0C190.931 4.39387e-05 246 55.0699 246 123.001V254.2C246 322.131 190.931 377.201 123 377.201C55.0689 377.201 0 322.131 0 254.2V123.001C0 55.0699 55.0689 0 123 0ZM123 13.667C62.6168 13.667 13.667 62.6178 13.667 123.001V254.2C13.667 314.583 62.6168 363.534 123 363.534C183.383 363.534 232.333 314.583 232.333 254.2V123.001C232.333 62.6178 183.383 13.667 123 13.667ZM77.917 134.473L77.9756 136.655C79.1503 159.115 98.3309 177.346 122.307 177.346C146.281 177.344 165.458 159.114 166.633 136.655L166.691 134.473V106.6H192.674V267.381H166.691V187.687C154.55 197.313 139.082 203.072 122.307 203.072C105.531 203.072 90.0589 197.313 77.917 187.687V267.381H51.9336V106.6H77.917V134.473Z"/>
             </symbol>
+            <symbol id="logoSym" viewBox="0 0 400 109"></symbol>
           </defs>
           <rect id="bgRect" width="600" height="600" fill="#21005E"/>
           <g id="bgFx"></g>
           <g id="elements"></g>
+          <g id="logo"></g>
         </svg>
       </div>
       <div class="stage-foot">
@@ -183,6 +185,42 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
         <div class="row"><input type="range" id="opacity" min="10" max="100" value="100" step="1"><span class="val" id="opacityOut">100%</span></div>
       </div>
 
+      <div class="seg">Logo</div>
+      <div class="ctrl">
+        <label class="row" style="cursor:pointer;color:var(--text)"><input type="checkbox" id="showLogo" style="accent-color:#4000B8">Show logo</label>
+      </div>
+      <div id="logoControls" style="display:none;flex-direction:column;gap:13px">
+        <div class="ctrl">
+          <label>Logo size <span style="color:var(--text-muted)">(% width)</span></label>
+          <div class="row"><input type="range" id="logoSize" min="5" max="60" value="25" step="1"><span class="val" id="logoSizeOut">25%</span></div>
+        </div>
+        <div class="ctrl">
+          <label>Logo position X</label>
+          <div class="row"><input type="range" id="logoX" min="0" max="100" value="50" step="1"><span class="val" id="logoXOut">50%</span></div>
+        </div>
+        <div class="ctrl">
+          <label>Logo position Y</label>
+          <div class="row"><input type="range" id="logoY" min="0" max="100" value="50" step="1"><span class="val" id="logoYOut">50%</span></div>
+        </div>
+        <div class="ctrl">
+          <label>Logo colour</label>
+          <div class="swatches" id="logoSwatches" style="grid-template-columns:repeat(7,1fr)">
+            <div class="sw logosw" data-fill="#21005E" style="background:#21005E;--fg:#21005E" title="Primary"></div>
+            <div class="sw logosw" data-fill="#F3EAFF" style="background:#F3EAFF;--fg:#F3EAFF" title="Secondary"></div>
+            <div class="sw logosw" data-fill="#4000B8" style="background:#4000B8;--fg:#4000B8" title="Tertiary"></div>
+            <div class="sw logosw" data-fill="#FFFFFF" style="background:#FFFFFF;--fg:#FFFFFF" title="White"></div>
+            <div class="sw logosw" data-fill="#FCFAFF" style="background:#FCFAFF;--fg:#FCFAFF" title="Neutral 005"></div>
+            <div class="sw logosw" data-fill="#313131" style="background:#313131;--fg:#313131" title="Neutral 090"></div>
+            <div class="sw logosw" data-fill="#1A1A1A" style="background:#1A1A1A;--fg:#1A1A1A" title="Neutral 100"></div>
+          </div>
+          <input type="hidden" id="logoColor" value="#21005E">
+        </div>
+        <div class="ctrl">
+          <label>Exclusion padding <span style="color:var(--text-muted)">(% logo width)</span></label>
+          <div class="row"><input type="range" id="logoPad" min="0" max="50" value="8" step="1"><span class="val" id="logoPadOut">8%</span></div>
+        </div>
+      </div>
+
       <div class="seg">Export</div>
       <div class="ctrl">
         <label class="row" style="cursor:pointer;color:var(--text)"><input type="checkbox" id="bgOnly" style="accent-color:#4000B8">Background only (no marks)</label>
@@ -210,6 +248,21 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
   const bgRect=document.getElementById('bgRect');
   const MONO_PATH="M123 0C190.931 4.39387e-05 246 55.0699 246 123.001V254.2C246 322.131 190.931 377.201 123 377.201C55.0689 377.201 0 322.131 0 254.2V123.001C0 55.0699 55.0689 0 123 0ZM123 13.667C62.6168 13.667 13.667 62.6178 13.667 123.001V254.2C13.667 314.583 62.6168 363.534 123 363.534C183.383 363.534 232.333 314.583 232.333 254.2V123.001C232.333 62.6178 183.383 13.667 123 13.667ZM77.917 134.473L77.9756 136.655C79.1503 159.115 98.3309 177.346 122.307 177.346C146.281 177.344 165.458 159.114 166.633 136.655L166.691 134.473V106.6H192.674V267.381H166.691V187.687C154.55 197.313 139.082 203.072 122.307 203.072C105.531 203.072 90.0589 197.313 77.917 187.687V267.381H51.9336V106.6H77.917V134.473Z";
   const RAMP=['#D8C1FF','#B98CFF','#6E1FFF','#4000B8','#21005E'];
+
+  // HeyMax wordmark — flat single-colour paths, source viewBox 0 0 400 109.
+  const LOGO_VB_W=400, LOGO_VB_H=109, LOGO_AR=LOGO_VB_H/LOGO_VB_W;
+  const LOGO_DS=[
+    "M339.065 85L360.706 53.9061L338.952 23.04H356.492L373.462 48.0974H365.604L382.574 23.04H400L378.36 53.9061L399.887 85H382.46L365.717 60.0565H373.349L356.606 85H339.065Z",
+    "M298.514 86.5C294.186 86.5 290.428 85.7786 287.238 84.336C284.049 82.8933 281.582 80.8431 279.835 78.1855C278.089 75.452 277.216 72.3008 277.216 68.7321C277.216 65.3151 277.975 62.2779 279.493 59.6203C281.012 56.8868 283.366 54.6088 286.555 52.7865C289.744 50.9641 293.769 49.6733 298.628 48.914L318.902 45.611V57.0007L301.476 59.962C298.514 60.4935 296.312 61.4426 294.87 62.8094C293.427 64.1762 292.706 65.9606 292.706 68.1626C292.706 70.2887 293.503 71.9971 295.097 73.2879C296.768 74.5028 298.818 75.1103 301.248 75.1103C304.361 75.1103 307.095 74.4649 309.448 73.174C311.878 71.8073 313.739 69.947 315.029 67.5931C316.396 65.2392 317.079 62.6575 317.079 59.8481V43.9025C317.079 41.2449 316.016 39.0429 313.89 37.2965C311.84 35.4741 309.107 34.5629 305.69 34.5629C302.501 34.5629 299.653 35.4362 297.148 37.1826C294.718 38.8531 292.933 41.093 291.794 43.9025L279.607 37.9799C280.822 34.7148 282.721 31.9053 285.302 29.5515C287.96 27.1217 291.073 25.2234 294.642 23.8566C298.211 22.4899 302.083 21.8065 306.259 21.8065C311.347 21.8065 315.827 22.7556 319.699 24.6539C323.572 26.4763 326.571 29.0579 328.697 32.3989C330.899 35.664 332 39.4985 332 43.9025V85.1332H317.877V74.5408L321.066 74.313C319.471 76.9706 317.573 79.2106 315.371 81.0329C313.169 82.7794 310.663 84.1461 307.854 85.1332C305.044 86.0444 301.931 86.5 298.514 86.5Z",
+    "M137.239 108.964C136.176 108.964 134.999 108.85 133.708 108.622C132.493 108.47 131.317 108.204 130.178 107.825V101.446C131.089 101.674 132.114 101.864 133.253 102.016C134.468 102.168 135.569 102.244 136.556 102.244C140.276 102.168 143.2 101.256 145.326 99.5101C147.452 97.7636 149.388 94.8783 151.135 90.8539L155.463 80.717V87.0953L129.836 23.4268H137.353L159.335 78.3252H156.602L178.698 23.4268H186.329L158.082 92.3345C157.019 94.8403 155.615 97.384 153.868 99.9656C152.122 102.547 149.882 104.673 147.148 106.344C144.491 108.09 141.188 108.964 137.239 108.964Z",
+    "M101.903 85.2726C96.2085 85.2726 91.0832 83.9058 86.5273 81.1723C81.9714 78.3628 78.3647 74.5663 75.7071 69.7826C73.0495 64.923 71.7207 59.4939 71.7207 53.4953C71.7207 47.4967 73.0115 42.1436 75.5932 37.4358C78.1748 32.6522 81.6677 28.8936 86.0717 26.16C90.4757 23.4265 95.4113 22.0597 100.878 22.0597C105.055 22.0597 108.813 22.819 112.154 24.3377C115.571 25.8563 118.494 27.9824 120.924 30.7159C123.43 33.3735 125.328 36.4487 126.619 39.9416C127.986 43.3585 128.669 46.9652 128.669 50.7618C128.669 51.5211 128.631 52.3184 128.555 53.1536C128.479 53.9889 128.365 54.8621 128.214 55.7733H75.7071V49.5089H124.341L121.266 51.9008C121.721 47.4967 121.076 43.5483 119.33 40.0555C117.583 36.4867 115.077 33.6772 111.812 31.6271C108.623 29.501 104.979 28.438 100.878 28.438C96.778 28.438 93.0194 29.539 89.6025 31.741C86.1856 33.8671 83.49 36.8284 81.5158 40.6249C79.5416 44.3456 78.6304 48.6737 78.7823 53.6092C78.6304 58.5448 79.5796 62.9108 81.6297 66.7074C83.6799 70.5039 86.4893 73.5032 90.0581 75.7052C93.6269 77.8313 97.5753 78.8944 101.903 78.8944C106.307 78.8944 110.142 77.8693 113.407 75.8191C116.672 73.6931 119.33 70.8836 121.38 67.3908L127.189 70.466C125.822 73.2754 123.886 75.8191 121.38 78.0971C118.874 80.2991 115.951 82.0455 112.61 83.3363C109.345 84.6272 105.776 85.2726 101.903 85.2726Z",
+    "M0 84.8533V0H7.40331V38.6111H55.2401V0H62.6434V84.8533H55.2401V45.4449H7.40331V84.8533H0Z",
+    "M195.479 0.0294961H209.118V85.2726H195.479V0.0294961Z",
+    "M255.717 0.0296343H269.356V85.2727H255.717V0.0296343Z",
+    "M232.417 51.8424C212.14 51.8424 195.479 32.8998 195.479 12.6911L209.118 12.6911C209.118 25.1235 219.426 38.2036 232.417 38.2036C245.409 38.2036 255.717 25.1234 255.717 12.6911L269.356 12.6911C269.356 32.8997 252.695 51.8424 232.417 51.8424Z"
+  ];
+  const LOGO_PATHS=LOGO_DS.map(d=>`<path d="${d}"/>`).join('');
+  document.getElementById('logoSym').innerHTML=LOGO_PATHS;
 
   let seed=42;
   function makeNoise(){
@@ -240,8 +293,33 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
     color:$('elemColor').value,
     mode:$('colorMode').value, bgStyle:$('bgStyle').value,
     op:+$('opacity').value/100, ns:+$('noiseScale').value/10,
-    str:+$('strength').value/100
+    str:+$('strength').value/100,
+    showLogo:$('showLogo').checked, logoSize:+$('logoSize').value/100,
+    logoX:+$('logoX').value, logoY:+$('logoY').value,
+    logoColor:$('logoColor').value, logoPad:+$('logoPad').value/100
   };}
+
+  // Logo bounding box in canvas coordinates, centred on (logoX%, logoY%).
+  function logoBox(v){
+    const w=v.logoSize*W, h=w*LOGO_AR;
+    const cx=v.logoX/100*W, cy=v.logoY/100*H;
+    return {x:cx-w/2,y:cy-h/2,w,h};
+  }
+  // Placement-time exclusion test: true when a mark overlaps the padded logo box.
+  // Uses the mark's bounding circle (rotation-invariant) vs the rect, so a mark is
+  // never partly clipped by the logo — it's simply not placed.
+  function makeExcluder(v){
+    if(!v.showLogo) return null;
+    const b=logoBox(v), pad=v.logoPad*b.w;
+    const rx0=b.x-pad, ry0=b.y-pad, rx1=b.x+b.w+pad, ry1=b.y+b.h+pad;
+    const K=Math.hypot(AR,1)/2; // half-diagonal factor of a size×(size*AR) mark
+    return (x,y,size)=>{
+      const r=size*K;
+      const nx=Math.max(rx0,Math.min(x,rx1)), ny=Math.max(ry0,Math.min(y,ry1));
+      const dx=x-nx, dy=y-ny;
+      return dx*dx+dy*dy < r*r;
+    };
+  }
 
   let lastItems=[];
 
@@ -257,10 +335,15 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
 
   function build(v){
     const out=[];
+    // The logo exclusion runs here, at placement time, alongside the patterns'
+    // built-in non-overlap: a candidate that overlaps the logo zone is never
+    // pushed, so spacing stays even at the edge and the count reflects reality.
+    const excl=makeExcluder(v);
+    const push=it=>{ if(!(excl&&excl(it.x,it.y,it.size))) out.push(it); };
     if(v.type==='grid'){
       const g=gridCells(v), size=g.maxSize*v.sizePct;
       for(let r=0;r<g.rows;r++)for(let c=0;c<g.cols;c++)
-        out.push({x:g.ox+g.cw*(c+.5),y:g.oy+g.ch*(r+.5),size,rot:0,t:(r*g.cols+c)/(g.rows*g.cols)});
+        push({x:g.ox+g.cw*(c+.5),y:g.oy+g.ch*(r+.5),size,rot:0,t:(r*g.cols+c)/(g.rows*g.cols)});
     } else if(v.type==='fibonacci'){
       const n=v.count, ga=2*Math.PI*(1-1/1.618033988749895);
       const R=(Math.hypot(W,H)/2)*v.spread;
@@ -272,7 +355,7 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
         const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=dx*dx+dy*dy;
         if(d<minD)minD=d;}
       const size=Math.sqrt(minD)*0.96*v.sizePct;
-      pts.forEach(p=>out.push({x:p.x,y:p.y,size,rot:0,t:p.t}));
+      pts.forEach(p=>push({x:p.x,y:p.y,size,rot:0,t:p.t}));
     } else if(v.type==='circles'||v.type==='orbit'){
       const R=(Math.hypot(W,H)/2)*v.spread;
       const rings=Math.max(2,Math.round(Math.sqrt(v.count/2.8)));
@@ -292,7 +375,7 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
         for(let i=0;i<nk;i++){
           const a=2*Math.PI*i/nk + phase*Math.PI/180;
           const rot=v.type==='orbit'?(a*180/Math.PI+90):0;
-          out.push({x:CX+radius*Math.cos(a),y:CY+radius*Math.sin(a),size,rot,t:k/rings});
+          push({x:CX+radius*Math.cos(a),y:CY+radius*Math.sin(a),size,rot,t:k/rings});
         }
       });
     } else if(v.type==='perlin'){
@@ -300,7 +383,7 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
       for(let r=0;r<g.rows;r++)for(let c=0;c<g.cols;c++){
         const x=g.ox+g.cw*(c+.5),y=g.oy+g.ch*(r+.5);
         const n=noise(x*v.ns/40,y*v.ns/40);
-        out.push({x,y,size,rot:n*360,t:(n+1)/2});
+        push({x,y,size,rot:n*360,t:(n+1)/2});
       }
     } else if(v.type==='halftone'){
       const g=gridCells(v);
@@ -310,7 +393,7 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
         const n=(noise(x*v.ns/60,y*v.ns/60)+1)/2;
         const d=Math.hypot(x-CX,y-CY)/maxD;
         const f=Math.max(0.12,1-v.str*(0.65*d+0.35*(1-n)));
-        out.push({x,y,size:g.maxSize*v.sizePct*f,rot:0,t:1-f});
+        push({x,y,size:g.maxSize*v.sizePct*f,rot:0,t:1-f});
       }
     } else if(v.type==='waves'){
       const g=gridCells(v);
@@ -319,7 +402,7 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
         const ph=(c/g.cols)*Math.PI*2*v.ns + r*0.6;
         const s=Math.sin(ph);
         const f=1-v.str*0.5*(1+s)*0.85;
-        out.push({x,y,size:g.maxSize*v.sizePct*Math.max(0.15,f),rot:s*v.str*60,t:(s+1)/2});
+        push({x,y,size:g.maxSize*v.sizePct*Math.max(0.15,f),rot:s*v.str*60,t:(s+1)/2});
       }
     } else { // cascade
       const g=gridCells(v);
@@ -328,7 +411,7 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
         const x=g.ox+g.cw*(c+.5),y=g.oy+g.ch*(r+.5);
         const t=(r+c)/maxI;
         const f=Math.max(0.12,1-v.str*t);
-        out.push({x,y,size:g.maxSize*v.sizePct*f,rot:v.str*t*90,t});
+        push({x,y,size:g.maxSize*v.sizePct*f,rot:v.str*t*90,t});
       }
     }
     return out;
@@ -390,6 +473,22 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
     });
     $('actualCount').textContent=items.length;
     $('patName').textContent=$('patType').selectedOptions[0].textContent.toLowerCase();
+
+    // Logo layer — topmost, above the pattern.
+    $('logoControls').style.display=v.showLogo?'flex':'none';
+    const logo=document.getElementById('logo');
+    logo.innerHTML='';
+    if(v.showLogo){
+      const b=logoBox(v);
+      const u=document.createElementNS(NS,'use');
+      u.setAttribute('href','#logoSym');
+      u.setAttribute('x',b.x.toFixed(2));
+      u.setAttribute('y',b.y.toFixed(2));
+      u.setAttribute('width',b.w.toFixed(2));
+      u.setAttribute('height',b.h.toFixed(2));
+      u.setAttribute('fill',v.logoColor);
+      logo.appendChild(u);
+    }
   }
 
   function bind(id,outId,fmt){
@@ -444,6 +543,21 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
   });
   selectFill($('elemColor').value);
 
+  $('showLogo').addEventListener('change',draw);
+  bind('logoSize','logoSizeOut',x=>x+'%');
+  bind('logoX','logoXOut',x=>x+'%');
+  bind('logoY','logoYOut',x=>x+'%');
+  bind('logoPad','logoPadOut',x=>x+'%');
+  function selectLogo(color){
+    $('logoColor').value=color;
+    document.querySelectorAll('.sw.logosw').forEach(s=>
+      s.classList.toggle('sel',s.dataset.fill.toLowerCase()===color.toLowerCase()));
+  }
+  document.querySelectorAll('.sw.logosw').forEach(sw=>{
+    sw.addEventListener('click',()=>{selectLogo(sw.dataset.fill);draw();});
+  });
+  selectLogo($('logoColor').value);
+
   $('shuffleBtn').addEventListener('click',()=>{
     seed=(Math.random()*1e9)>>>0;
     noise=makeNoise();
@@ -467,10 +581,16 @@ input[type=color]{padding:2px 4px;height:36px;cursor:pointer}
       const op=v.op<1?` fill-opacity="${v.op.toFixed(2)}"`:'';
       body+=`<path transform="${tr}" d="${MONO_PATH}" fill="${markColor(it,v)}"${op}/>`;
     });
+    // Logo as real vector paths (no raster embed), topmost. Skipped for background-only.
+    let logo='';
+    if(v.showLogo && !$('bgOnly').checked){
+      const b=logoBox(v), sc=(b.w*s)/LOGO_VB_W;
+      logo=`<g transform="translate(${(b.x*s).toFixed(2)} ${(b.y*s).toFixed(2)}) scale(${sc.toFixed(6)})" fill="${v.logoColor}">${LOGO_PATHS}</g>`;
+    }
     return `<?xml version="1.0" encoding="UTF-8"?>\n`+
       `<svg xmlns="${NS}" width="${outW}" height="${outH}" viewBox="0 0 ${outW} ${outH}">`+
       (v.bgStyle==='alpha'?'':`<rect width="${outW}" height="${outH}" fill="${v.bg}"/>${bgFxMarkup(v,s,'ex')}`)+
-      `${body}</svg>`;
+      `${body}${logo}</svg>`;
   }
 
   function download(blob,name){
